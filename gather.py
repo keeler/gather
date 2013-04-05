@@ -51,16 +51,51 @@ def scrapePage( multiverseId ):
 	texttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow', 'class' : 'row' } )
 	if texttag:
 		rules = texttag.findChildren( 'div', { 'class' : 'value' } )[0].findChildren( 'div', { 'class' : 'cardtextbox' } )
+		cardlines = []
 		for r in rules:
-			print unicode( r )
+			rulestring = unicode( r )
+			symbols = re.findall( '<img.*?\&amp\;name=([\da-zA-Z]+)\&amp\;.*?\/>', rulestring )
+			if symbols:
+				for i in range( len( symbols ) ):
+					if 'tap' in symbols[i]:
+						symbols[i] = '{T}'
+					elif 'P' in symbols[i]:
+						symbols[i] = '{' + symbols[i] + '}'
+					else:
+						symbols[i] = '{' + '/'.join( list( symbols[i] ) ) + '}'
+
+				for s in symbols:
+					rulestring = re.sub( '<img.*?/>', s, rulestring, 1 )
+
+			rulestring = re.sub( '<.?div.*?>', '', rulestring )
+			rulestring = re.sub( '<.?i>', '', rulestring )
+			cardlines.append( rulestring )
+		card['rules'] = '<br>'.join( cardlines )
+
+	# Get power and toughness.
+	pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow', 'class' : 'row' } )
+	if pttag:
+		pt = pttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip().split( '/' )
+		card['power'] = pt[0].strip()
+		card['toughness'] = pt[1].strip()
+
+	# Get rarity.
+	raritytag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_rarityRow', 'class' : 'row' } )
+	if raritytag:
+		card['rarity'] = raritytag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+
+	# Get artist.
+	artisttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_artistRow', 'class' : 'row' } )
+	if artisttag:
+		card['artist'] = artisttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+
 
 	return card
-
 
 def saveMasterList():
 	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?page=0&name=+[]' ) )
 
-ids = [ '218043', '159408', '153471', '73935' ]
+ids = [ '218043', '159408', '153471', '73935', '201563' ]
 for i in ids:
 	c = scrapePage( i )
 	print '=' * 80
@@ -70,4 +105,8 @@ for i in ids:
 	print c['supertype']
 	print c['type']
 	print c['subtype']
-	print c['rule']
+	print c['rules']
+	print c['power']
+	print c['toughness']
+	print c['rarity']
+	print c['artist']

@@ -94,11 +94,21 @@ def getRuleText( soup ):
 def getPowerToughness( soup ):
 	pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow', 'class' : 'row' } )
 	if pttag:
-		pt = pttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip().split( '/' )
-		return ( pt[0].strip(), pt[1].strip() )
-	else:
-		return ( '', '' )
+		label = pttag.findChildren( 'div', { 'class' : 'label' } )[0].text.strip()
+		if label == 'P/T:':
+			pt = pttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip().split( '/' )
+			return ( pt[0].strip(), pt[1].strip() )
 
+	return ( '', '' )
+
+
+def getLoyalty( soup ):
+	pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow', 'class' : 'row' } )
+	if pttag:
+		label = pttag.findChildren( 'div', { 'class' : 'label' } )[0].text.strip()
+		if label == 'Loyalty:':
+			return pttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+	return ''
 
 def getRarity( soup ):
 	raritytag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_rarityRow', 'class' : 'row' } )
@@ -179,6 +189,7 @@ def scrapePage( multiverseId ):
 	card['supertype'], card['type'], card['subtype'] = getTypes( soup )
 	card['rules'] = getRuleText( soup )
 	card['power'], card['toughness'] = getPowerToughness( soup )
+	card['loyalty'] = getLoyalty( soup )
 	card['rarity'] = getRarity( soup )
 	card['editions'] = getEditionsList( soup )
 
@@ -203,6 +214,8 @@ def printCard( card ):
 		print 'Power =', card['power']
 	if card['toughness']:
 		print 'Toughness =', card['toughness']
+	if card['loyalty']:
+		print 'Loyalty =', card['loyalty']
 	print 'Editions =', card['editions']
 
 
@@ -224,9 +237,11 @@ def saveMasterList():
 			printCard( c )
 			raw_input( "Next..." )
 
+
 #saveMasterList()
 
-ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268' ]
+
+ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299' ]
 for i in ids:
 	print '=' * 80
 	c = scrapePage( i )

@@ -20,7 +20,9 @@ def getManaCost( soup ):
 		for symbol in symbols:
 			m = re.search( '\&name=([\dA-Z]+)\&', symbol['src'] )
 			if m:
-				if 'P' in m.groups()[0]:
+				if 'snow' in m.groups()[0]:
+					manastring += '{S}'
+				elif 'P' in m.groups()[0]:
 					manastring += ( '{' + m.groups()[0] + '}' )
 				else:
 					manastring += ( '{' + '/'.join( list( m.groups()[0] ) ) + '}' )
@@ -72,6 +74,8 @@ def getRuleText( soup ):
 				for i in range( len( symbols ) ):
 					if 'tap' in symbols[i]:
 						symbols[i] = '{T}'
+					elif 'snow' in symbols[i]:
+						symbols[i] = '{S}'
 					elif 'P' in symbols[i]:
 						symbols[i] = '{' + symbols[i] + '}'
 					else:
@@ -147,17 +151,20 @@ def getFlavorText( soup ):
 # number for that set, flavor text, and artist.
 def getEditionsList( soup ):
 	editions = []
-	# First get the information on this page, then crawl to the pages for the other sets.
-	editions.append( ( getSetName( soup ), getCollectorNumber( soup ), getFlavorText( soup ), getArtist( soup ) ) )
 
-	othertag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_otherSetsRow', 'class' : 'row' } )
-	if othertag:
-		setlinks = othertag.findChildren( 'div', { 'class' : 'value' } )[0].find_all( 'a' )
+	alltag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_otherSetsRow', 'class' : 'row' } )
+	if alltag:
+		setlinks = alltag.findChildren( 'div', { 'class' : 'value' } )[0].find_all( 'a' )
 		for setlink in setlinks:
 			m = re.search( '(\d+)$', setlink['href'] )
 			if m:
+				mid = m.groups()[0] # Multiverse ID
 				othersoup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + m.groups()[0] ) )
-				editions.append( ( getSetName( othersoup ), getCollectorNumber( othersoup ), getFlavorText( othersoup ), getArtist( othersoup ) ) )
+				editions.append( ( mid, getSetName( othersoup ), getCollectorNumber( othersoup ), getRarity( othersoup ), getFlavorText( othersoup ), getArtist( othersoup ) ) )
+	else:
+		mid = re.search( '(\d+)$', soup.find( 'form', { 'method' : 'post', 'id' : 'aspnetForm' } )['action'] ).groups()[0]
+		editions.append( ( mid, getSetName( soup ), getCollectorNumber( soup ), getRarity( soup ), getFlavorText( soup ), getArtist( soup ) ) )
+
 
 	return editions
 
@@ -177,22 +184,51 @@ def scrapePage( multiverseId ):
 
 	return card
 
+
+def printCard( card ):
+	print 'Name =', card['name']
+	if card['mana']:
+		print 'Cost =', card['mana']
+	if card['cmc']:
+		print 'CMC =', card['cmc']
+	if card['supertype']:
+		print 'Supertypes =', card['supertype']
+	if card['type']:
+		print 'Types =', card['type']
+	if card['subtype']:
+		print 'Subtypes =', card['subtype']
+	if card['rules']:
+		print 'Rules text =', card['rules']
+	if card['power']:
+		print 'Power =', card['power']
+	if card['toughness']:
+		print 'Toughness =', card['toughness']
+	print 'Editions =', card['editions']
+
+
 def saveMasterList():
 	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?page=0&name=+[]' ) )
+	lastpagelink = soup.find( 'div', { 'class' : 'pagingcontrols' } ).findChildren( 'a' )[-1]
+	numPages = int( re.search( 'page=(.*?)\&', lastpagelink['href'] ).groups()[0] )
 
-ids = [ '218043', '159408', '153471', '73935', '201563', '366303' ]
+	cardlist = []
+	for pageNum in range( numPages + 1 ):
+		print 'On page ', pageNum
+		soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?page={}&name=+[]'.format( str( pageNum ) ) ) )
+
+		cardLinks = soup.find_all( 'a', id = lambda x: x and x.endswith('cardTitle') )
+		for cardlink in cardLinks:
+			multiverseId = re.search( 'multiverseid=(\d+)', cardlink['href'] ).groups()[0]
+			c = scrapePage( multiverseId )
+			print '=' * 80
+			printCard( c )
+			raw_input( "Next..." )
+
+#saveMasterList()
+
+ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268' ]
 for i in ids:
-	c = scrapePage( i )
 	print '=' * 80
-	print c['name']
-	print c['mana']
-	print c['cmc']
-	print c['supertype']
-	print c['type']
-	print c['subtype']
-	print c['rules']
-	print c['power']
-	print c['toughness']
-	print c['rarity']
-	print c['editions']
+	c = scrapePage( i )
+	printCard( c )
 

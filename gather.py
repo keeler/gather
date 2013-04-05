@@ -112,6 +112,56 @@ def getArtist( soup ):
 		return ''
 
 
+def getSetName( soup ):
+	settag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_setRow', 'class' : 'row' } )
+	if settag:
+		return settag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+	else:
+		return ''
+
+
+# Cards from early sets may not have a collector number, just so's ya know.
+def getCollectorNumber( soup ):
+	cntag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_numberRow', 'class' : 'row' } )
+	if cntag:
+		return cntag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+	else:
+		return ''
+
+
+def getFlavorText( soup ):
+	flavortag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_flavorRow', 'class' : 'row' } )
+	if flavortag:
+		flavorlines = flavortag.findChildren( 'div', { 'class' : 'value' } )[0].findChildren( 'div', { 'class' : 'cardtextbox' } )
+		p = re.compile( ur'\u2014', re.UNICODE )
+		flavortext = [] 
+		for flavor in flavorlines:
+			flavortext.append( p.sub( '--', flavor.text ).strip() )
+		return '<br>'.join( flavortext )
+	else:
+		return ''
+
+
+# Cards can be printed over many different sets, e.g. Naturalize. Make a list
+# of these editions, where each list item is a tuple of the set name, collector
+# number for that set, flavor text, and artist.
+def getEditionsList( soup ):
+	editions = []
+	# First get the information on this page, then crawl to the pages for the other sets.
+	editions.append( ( getSetName( soup ), getCollectorNumber( soup ), getFlavorText( soup ), getArtist( soup ) ) )
+
+	othertag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_otherSetsRow', 'class' : 'row' } )
+	if othertag:
+		setlinks = othertag.findChildren( 'div', { 'class' : 'value' } )[0].find_all( 'a' )
+		for setlink in setlinks:
+			m = re.search( '(\d+)$', setlink['href'] )
+			if m:
+				othersoup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + m.groups()[0] ) )
+				editions.append( ( getSetName( othersoup ), getCollectorNumber( othersoup ), getFlavorText( othersoup ), getArtist( othersoup ) ) )
+
+	return editions
+
+
 def scrapePage( multiverseId ):
 	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + multiverseId ) )
 	card = defaultdict( str )
@@ -123,14 +173,14 @@ def scrapePage( multiverseId ):
 	card['rules'] = getRuleText( soup )
 	card['power'], card['toughness'] = getPowerToughness( soup )
 	card['rarity'] = getRarity( soup )
-	card['artist'] = getArtist( soup )
+	card['editions'] = getEditionsList( soup )
 
 	return card
 
 def saveMasterList():
 	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?page=0&name=+[]' ) )
 
-ids = [ '218043', '159408', '153471', '73935', '201563' ]
+ids = [ '218043', '159408', '153471', '73935', '201563', '366303' ]
 for i in ids:
 	c = scrapePage( i )
 	print '=' * 80
@@ -144,4 +194,5 @@ for i in ids:
 	print c['power']
 	print c['toughness']
 	print c['rarity']
-	print c['artist']
+	print c['editions']
+

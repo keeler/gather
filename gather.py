@@ -4,50 +4,63 @@ import re
 import os
 from collections import defaultdict
 
-def scrapePage( multiverseId ):
-	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + multiverseId ) )
-	card = defaultdict( str )
-
-	# Get name.
+def getName( soup ):
 	nametag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_nameRow', 'class' : 'row' } )
 	if nametag:
-		card['name'] = nametag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+		return nametag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+	else:
+		return ''
 
-	# Get mana cost.
+
+def getManaCost( soup ):
 	manatag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_manaRow', 'class' : 'row' } )
+	manastring = ''
 	if manatag:
 		symbols = manatag.findChildren( 'div', { 'class' : 'value' } )[0].findChildren( 'img' )
 		for symbol in symbols:
 			m = re.search( '\&name=([\dA-Z]+)\&', symbol['src'] )
 			if m:
 				if 'P' in m.groups()[0]:
-					card['mana'] += ( '{' + m.groups()[0] + '}' )
+					manastring += ( '{' + m.groups()[0] + '}' )
 				else:
-					card['mana'] += ( '{' + '/'.join( list( m.groups()[0] ) ) + '}' )
+					manastring += ( '{' + '/'.join( list( m.groups()[0] ) ) + '}' )
+	return manastring
 
-	# Get converted mana cost.
+
+def getConvertedManaCost( soup ):
 	cmctag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_cmcRow', 'class' : 'row' } )
 	if cmctag:
-		card['cmc'] = cmctag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+		return cmctag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+	else:
+		return ''
 
-	# Get types.
+
+# Returns 3-tuple of strings, one for supertypes, one for types, and one for subtypes.
+def getTypes( soup ):
 	typetag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_typeRow', 'class' : 'row' } )
+
+	supertypes = ''
+	types = ''
+	subtypes = ''
 	if typetag:
 		typestring = typetag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
-		types = re.compile( ur'\u2014', re.UNICODE ).split( typestring )
-		for t in types[0].split( ' ' ):
+		typelist = re.compile( ur'\u2014', re.UNICODE ).split( typestring )
+		for t in typelist[0].split( ' ' ):
 			if t in ['Basic', 'Legendary', 'Snow', 'World']:
-				card['supertype'] += ( t + ' ' )
+				supertypes += ( t + ' ' )
 			elif t in ['Artifact', 'Creature', 'Enchantment', 'Land', 'Planeswalker', 'Tribal', 'Instant', 'Sorcery']:
-				card['type'] += ( t + ' ' )
+				types += ( t + ' ' )
 			elif t:
 				print 'Unknown type:', t, 'multiverseId =', multiverseId
-		card['supertype'] = card['supertype'].strip()
-		card['type'] = card['type'].strip()
-		if len( types ) > 1:
-			card['subtype'] = types[1].strip()
+		supertypes = supertypes.strip()
+		types = types.strip()
+		if len( typelist ) > 1:
+			subtypes = typelist[1].strip()
 
-	# Get card's rule text.
+	return ( supertypes, types, subtypes )
+
+
+def getRuleText( soup ):
 	texttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow', 'class' : 'row' } )
 	if texttag:
 		rules = texttag.findChildren( 'div', { 'class' : 'value' } )[0].findChildren( 'div', { 'class' : 'cardtextbox' } )
@@ -70,25 +83,47 @@ def scrapePage( multiverseId ):
 			rulestring = re.sub( '<.?div.*?>', '', rulestring )
 			rulestring = re.sub( '<.?i>', '', rulestring )
 			cardlines.append( rulestring )
-		card['rules'] = '<br>'.join( cardlines )
+	
+	return '<br>'.join( cardlines )
 
-	# Get power and toughness.
+# Returns power, toughness as tuple.
+def getPowerToughness( soup ):
 	pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow', 'class' : 'row' } )
 	if pttag:
 		pt = pttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip().split( '/' )
-		card['power'] = pt[0].strip()
-		card['toughness'] = pt[1].strip()
+		return ( pt[0].strip(), pt[1].strip() )
+	else:
+		return ( '', '' )
 
-	# Get rarity.
+
+def getRarity( soup ):
 	raritytag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_rarityRow', 'class' : 'row' } )
 	if raritytag:
-		card['rarity'] = raritytag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+		return raritytag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+	else:
+		return ''
 
-	# Get artist.
+
+def getArtist( soup ):
 	artisttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_artistRow', 'class' : 'row' } )
 	if artisttag:
-		card['artist'] = artisttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+		return artisttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
+	else:
+		return ''
 
+
+def scrapePage( multiverseId ):
+	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + multiverseId ) )
+	card = defaultdict( str )
+
+	card['name'] = getName( soup )
+	card['mana'] = getManaCost( soup )
+	card['cmc'] = getConvertedManaCost( soup )
+	card['supertype'], card['type'], card['subtype'] = getTypes( soup )
+	card['rules'] = getRuleText( soup )
+	card['power'], card['toughness'] = getPowerToughness( soup )
+	card['rarity'] = getRarity( soup )
+	card['artist'] = getArtist( soup )
 
 	return card
 

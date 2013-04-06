@@ -41,7 +41,7 @@ def getManaCost( soup, doubleSided = False, desiredSide = 'a' ):
 				elif 'P' in m.groups()[0]:
 					manastring += ( '{' + m.groups()[0] + '}' )
 				else:
-					manastring += ( '{' + '/'.join( list( m.groups()[0] ) ) + '}' )
+					manastring += ( '{' + '/'.join( filter( None, re.split( '([A-Z]|\d+)', m.groups()[0] ) ) ) + '}' )
 	return manastring
 
 
@@ -117,7 +117,7 @@ def getRuleText( soup , doubleSided = False, desiredSide = 'a' ):
 					elif 'P' in symbols[i]:
 						symbols[i] = '{' + symbols[i] + '}'
 					else:
-						symbols[i] = '{' + '/'.join( list( symbols[i] ) ) + '}'
+						symbols[i] = '{' + '/'.join( filter( None, re.split( '([A-Z]|\d+)', symbols[i] ) ) ) + '}'
 
 				for s in symbols:
 					rulestring = re.sub( '<img.*?/>', s, rulestring, 1 )
@@ -375,7 +375,7 @@ def saveMasterList():
 
 #saveMasterList()
 
-ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675', '262698', '292753' ]
+ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675', '262698', '292753', '2014' ]
 for i in ids:
 	print '=' * 80
 	c = scrapePage( i )

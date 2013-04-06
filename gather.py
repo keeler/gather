@@ -64,9 +64,9 @@ def getTypes( soup ):
 
 def getRuleText( soup ):
 	texttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow', 'class' : 'row' } )
+	cardlines = []
 	if texttag:
 		rules = texttag.findChildren( 'div', { 'class' : 'value' } )[0].findChildren( 'div', { 'class' : 'cardtextbox' } )
-		cardlines = []
 		for r in rules:
 			rulestring = unicode( r )
 			symbols = re.findall( '<img.*?\&amp\;name=([\da-zA-Z]+)\&amp\;.*?\/>', rulestring )
@@ -179,19 +179,28 @@ def getEditionsList( soup ):
 	return editions
 
 
+def isDoubleSided( soup ):
+	nametag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07nameRow', 'class' : 'row' } )
+	if nametag:
+		return True
+	else:
+		return False
+
+
 def scrapePage( multiverseId ):
 	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + multiverseId ) )
 	card = defaultdict( str )
 
-	card['name'] = getName( soup )
-	card['mana'] = getManaCost( soup )
-	card['cmc'] = getConvertedManaCost( soup )
-	card['supertype'], card['type'], card['subtype'] = getTypes( soup )
-	card['rules'] = getRuleText( soup )
-	card['power'], card['toughness'] = getPowerToughness( soup )
-	card['loyalty'] = getLoyalty( soup )
-	card['rarity'] = getRarity( soup )
-	card['editions'] = getEditionsList( soup )
+	if not isDoubleSided( soup ):
+		card['name'] = getName( soup )
+		card['mana'] = getManaCost( soup )
+		card['cmc'] = getConvertedManaCost( soup )
+		card['supertype'], card['type'], card['subtype'] = getTypes( soup )
+		card['rules'] = getRuleText( soup )
+		card['power'], card['toughness'] = getPowerToughness( soup )
+		card['loyalty'] = getLoyalty( soup )
+		card['rarity'] = getRarity( soup )
+		card['editions'] = getEditionsList( soup )
 
 	return card
 
@@ -238,12 +247,12 @@ def saveMasterList():
 			raw_input( "Next..." )
 
 
-#saveMasterList()
+saveMasterList()
 
 
-ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299' ]
-for i in ids:
-	print '=' * 80
-	c = scrapePage( i )
-	printCard( c )
+#ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675' ]
+#for i in ids:
+#	print '=' * 80
+#	c = scrapePage( i )
+#	printCard( c )
 

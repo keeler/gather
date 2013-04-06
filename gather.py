@@ -72,25 +72,24 @@ def getTypes( soup , doubleSided = False, desiredSide = 'a' ):
 	else:
 		typetag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_typeRow', 'class' : 'row' } )
 
-	supertypes = ''
-	types = ''
+	supertypes = []
+	types = []
 	subtypes = ''
 	if typetag:
 		typestring = typetag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
 		typelist = re.compile( ur'\u2014', re.UNICODE ).split( typestring )
 		for t in typelist[0].split( ' ' ):
 			if t in ['Basic', 'Legendary', 'Snow', 'World']:
-				supertypes += ( t + ' ' )
+				supertypes.append( t )
 			elif t in ['Artifact', 'Creature', 'Enchantment', 'Land', 'Planeswalker', 'Tribal', 'Instant', 'Sorcery']:
-				types += ( t + ' ' )
+				types.append( t )
 			elif t:
-				print 'Unknown type:', t
-		supertypes = supertypes.strip()
-		types = types.strip()
+				print 'Weird type:', t
+				types.append( t )
 		if len( typelist ) > 1:
 			subtypes = typelist[1].strip()
 
-	return ( supertypes, types, subtypes )
+	return ( ' '.join( supertypes ), ' '.join( types ), subtypes )
 
 
 def getRuleText( soup , doubleSided = False, desiredSide = 'a' ):
@@ -374,11 +373,11 @@ def saveMasterList():
 #			raw_input( "Next..." )
 
 
-saveMasterList()
+#saveMasterList()
 
-#ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675', '262698', '292753' ]
-#for i in ids:
-#	print '=' * 80
-#	c = scrapePage( i )
-#	printCard( c )
+ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675', '262698', '292753' ]
+for i in ids:
+	print '=' * 80
+	c = scrapePage( i )
+	printCard( c )
 

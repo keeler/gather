@@ -125,8 +125,13 @@ def getRuleText( soup , doubleSided = False, desiredSide = 'a' ):
 			rulestring = re.sub( '<.?div.*?>', '', rulestring )
 			rulestring = re.sub( '<.?i>', '', rulestring )
 			cardlines.append( rulestring )
+
+	p = re.compile( ur'\u2014', re.UNICODE )
+	cardtext = []
+	for rule in cardlines:
+		cardtext.append( p.sub( '--', rule ).strip() )
 	
-	return '<br>'.join( filter( None, cardlines ) )
+	return '<br>'.join( filter( None, cardtext ) )
 
 # Returns power, toughness as tuple.
 def getPowerToughness( soup , doubleSided = False, desiredSide = 'a' ):
@@ -270,7 +275,7 @@ def getEditionsList( soup, doubleSided = False, desiredSide = 'a' ):
 			m = re.search( '(\d+)$', setlink['href'] )
 			if m:
 				mid = m.groups()[0] # Multiverse ID
-				othersoup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + m.groups()[0] ) )
+				othersoup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + mid ) )
 				editions.append( ( mid,
 								   getSetName( othersoup, doubleSided, desiredSide ),
 								   getCollectorNumber( othersoup, doubleSided, desiredSide ),
@@ -328,11 +333,15 @@ def scrapePage( multiverseId ):
 		card['rarity'] = getRarity( soup, True, desiredSide )
 		card['editions'] = getEditionsList( soup, True, desiredSide )
 
+	p = re.compile( ur'\xc6', re.UNICODE )
+	card['name'] = p.sub( 'Ae', card['name'] ).strip()
+	card['rules'] = p.sub( 'Ae', card['rules'] ).strip()
+
 	return card
 
 
 def printCard( card ):
-	print 'Name =', card['name']
+	print 'Name =', card['name'].decode( 'utf-8' )
 	if card['mana']:
 		print 'Cost =', card['mana']
 	if card['cmc']:
@@ -360,9 +369,9 @@ def saveMasterList():
 	numPages = int( re.search( 'page=(.*?)\&', lastpagelink['href'] ).groups()[0] )
 
 	cardlist = []
-	for pageNum in range( 4, numPages + 1 ):
+	for pageNum in range( 6, numPages + 1 ):
 		print 'On page ', pageNum
-		soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?page={}&name=+[]'.format( str( pageNum ) ) ) )
+		soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?page={0}&name=+[]'.format( str( pageNum ) ) ) )
 
 		cardLinks = soup.find_all( 'a', id = lambda x: x and x.endswith('cardTitle') )
 		for cardlink in cardLinks:
@@ -373,11 +382,11 @@ def saveMasterList():
 #			raw_input( "Next..." )
 
 
-#saveMasterList()
+saveMasterList()
 
-ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675', '262698', '292753', '2014' ]
-for i in ids:
-	print '=' * 80
-	c = scrapePage( i )
-	printCard( c )
+#ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675', '262698', '292753', '2014' ]
+#for i in ids:
+	#print '=' * 80
+	#c = scrapePage( i )
+	#printCard( c )
 

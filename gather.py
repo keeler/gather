@@ -3,6 +3,7 @@ import urllib
 import re
 import os
 from collections import defaultdict
+import codecs
 
 def getName( soup, doubleSided = False, desiredSide = 'a' ):
 	nametag = ''
@@ -305,6 +306,7 @@ def isDoubleSided( soup ):
 def scrapePage( multiverseId ):
 	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + multiverseId ) )
 	card = defaultdict( str )
+	card['mid'] = multiverseId
 
 	if not isDoubleSided( soup ):
 		card['name'] = getName( soup )
@@ -314,8 +316,11 @@ def scrapePage( multiverseId ):
 		card['rules'] = getRuleText( soup )
 		card['power'], card['toughness'] = getPowerToughness( soup )
 		card['loyalty'] = getLoyalty( soup )
+		card['set'] = getSetName( soup )
+		card['number'] = getCollectorNumber( soup )
 		card['rarity'] = getRarity( soup )
-		card['editions'] = getEditionsList( soup )
+		card['flavor'] = getFlavorText( soup )
+		card['artist'] = getArtist( soup )
 	else:
 		# Figure out which side corresponds to this multiverseId
 		subtitle = soup.find( 'span', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContentHeader_subtitleDisplay' } )
@@ -330,8 +335,11 @@ def scrapePage( multiverseId ):
 		card['rules'] = getRuleText( soup, True, desiredSide )
 		card['power'], card['toughness'] = getPowerToughness( soup, True, desiredSide )
 		card['loyalty'] = getLoyalty( soup, True, desiredSide )
+		card['set'] = getSetName( soup, True, desiredSide )
+		card['number'] = getCollectorNumber( soup, True, desiredSide )
 		card['rarity'] = getRarity( soup, True, desiredSide )
-		card['editions'] = getEditionsList( soup, True, desiredSide )
+		card['flavor'] = getFlavorText( soup, True, desiredSide )
+		card['artist'] = getArtist( soup, True, desiredSide )
 
 	p = re.compile( ur'\xc6', re.UNICODE )
 	card['name'] = p.sub( 'Ae', card['name'] ).strip()
@@ -340,49 +348,41 @@ def scrapePage( multiverseId ):
 	return card
 
 
-def printCard( card ):
-	print 'Name =', card['name'].decode( 'utf-8' )
-	if card['mana']:
-		print 'Cost =', card['mana']
-	if card['cmc']:
-		print 'CMC =', card['cmc']
-	if card['supertype']:
-		print 'Supertypes =', card['supertype']
-	if card['type']:
-		print 'Types =', card['type']
-	if card['subtype']:
-		print 'Subtypes =', card['subtype']
-	if card['rules']:
-		print 'Rules text =', card['rules']
-	if card['power']:
-		print 'Power =', card['power']
-	if card['toughness']:
-		print 'Toughness =', card['toughness']
-	if card['loyalty']:
-		print 'Loyalty =', card['loyalty']
-	print 'Editions =', card['editions']
+def printCard( card, filehandle = None ):
+	attributes = [ 'name', 'mid', 'mana', 'cmc', 'supertype', 'type', 'subtype',
+					'rules', 'power', 'toughness', 'loyalty', 'set', 'number',
+					'rarity', 'flavor', 'artist' ]
+	if filehandle:
+		filehandle.write( '<card>\n' )
+		for attr in attributes:
+			if card[attr]:
+				filehandle.write( '\t<' + attr + '>' + card[attr] + '</' + attr + '>\n' )
+		filehandle.write( '</card>\n' )
+	else:
+		print '<card>'
+		for attr in attributes:
+			if card[attr]:
+				print '\t<' + attr + '>' + card[attr] + '</' + attr + '>'
+		print '</card>'
 
+def saveSet( setName ):
+	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?output=checklist&action=advanced&set=|[%22' + '+'.join( setName.split() ) + '%22]' ) )
 
-def saveMasterList():
-	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?page=0&name=+[]' ) )
-	lastpagelink = soup.find( 'div', { 'class' : 'pagingcontrols' } ).findChildren( 'a' )[-1]
-	numPages = int( re.search( 'page=(.*?)\&', lastpagelink['href'] ).groups()[0] )
+	xmlfile = codecs.open( '%s.xml' % setName, 'w', 'utf-8' )
+	cardLinks = soup.find_all( 'a', { 'class' : 'nameLink' } )
 
-	cardlist = []
-	for pageNum in range( 6, numPages + 1 ):
-		print 'On page ', pageNum
-		soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?page={0}&name=+[]'.format( str( pageNum ) ) ) )
+	i = 1
+	for link in cardLinks:
+		m = re.search( '(\d+)$', link['href'] )
+		if m:
+			mid = m.group( 0 )
+			c = scrapePage( mid )
+			print i, '/', len( cardLinks )
+			printCard( c, xmlfile )
+			i += 1
 
-		cardLinks = soup.find_all( 'a', id = lambda x: x and x.endswith('cardTitle') )
-		for cardlink in cardLinks:
-			multiverseId = re.search( 'multiverseid=(\d+)', cardlink['href'] ).groups()[0]
-			c = scrapePage( multiverseId )
-			print '=' * 80
-			printCard( c )
-#			raw_input( "Next..." )
+	xmlfile.close()
 
-
-saveMasterList()
 
 #ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675', '262698', '292753', '2014' ]
 #for i in ids:
@@ -390,3 +390,9 @@ saveMasterList()
 	#c = scrapePage( i )
 	#printCard( c )
 
+sets = open( 'setnames' )
+for s in sets:
+	s = s.strip()
+	if s and s[0] != '#':
+		print s
+		saveSet( s )

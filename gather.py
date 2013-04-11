@@ -4,6 +4,7 @@ import re
 import os
 from collections import defaultdict
 import codecs
+from optparse import OptionParser
 
 Basis = 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent'
 
@@ -393,12 +394,34 @@ def saveSet( setName ):
 	xmlfile.close()
 
 
-if not os.path.exists( 'sets' ):
-	os.makedirs( 'sets' )
+if __name__ == '__main__':
+	usage = 'usage: %prog [-a|-s <set name>]\nScrape card information from gatherer.wizards.com into XML files.'
+	parser = OptionParser( usage = usage )
+	parser.add_option( '-a', '--all',
+						action = 'store_true', dest = 'downloadAll', default = 'True',
+						help = 'Scrape information for all Magic: The Gathering sets.' )
+	parser.add_option( '-s', '--set',
+						metavar = 'SETNAME', help = 'Download a specific set. See allsets file for recognized sets.' )
 
-sets = open( 'allsets' )
-for s in sets:
-	s = s.strip()
-	if s and s[0] != '#':
-		saveSet( s )
+	( options, args ) = parser.parse_args()
+
+	allsets = open( 'allsets' )
+	setNames = []
+	for s in allsets:
+		s = s.strip()
+		if s and s[0] != '#':
+			setNames.append( s )
+
+	if not os.path.exists( 'sets' ):
+		os.makedirs( 'sets' )
+
+	if options.set:
+		if options.set in setNames:
+			saveSet( options.set )
+		else:
+			print 'Not a recognized set name.'
+			parser.print_help()
+	else:
+		for s in setNames:
+			saveSet( s )
 

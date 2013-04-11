@@ -304,7 +304,14 @@ def isDoubleSided( soup ):
 
 
 def scrapePage( multiverseId ):
-	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + multiverseId ) )
+	havePage = False
+	while not havePage:
+		try:
+			soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + multiverseId ) )
+			havePage = True
+		except IOError:
+			pass
+
 	card = defaultdict( str )
 	card['mid'] = multiverseId
 
@@ -342,8 +349,8 @@ def scrapePage( multiverseId ):
 		card['artist'] = getArtist( soup, True, desiredSide )
 
 	p = re.compile( ur'\xc6', re.UNICODE )
-	card['name'] = p.sub( 'Ae', card['name'] ).strip()
-	card['rules'] = p.sub( 'Ae', card['rules'] ).strip()
+	#card['name'] = p.sub( 'Ae', card['name'] ).strip()
+	#card['rules'] = p.sub( 'Ae', card['rules'] ).strip()
 
 	return card
 
@@ -368,7 +375,7 @@ def printCard( card, filehandle = None ):
 def saveSet( setName ):
 	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?output=checklist&action=advanced&set=|[%22' + '+'.join( setName.split() ) + '%22]' ) )
 
-	xmlfile = codecs.open( '%s.xml' % setName, 'w', 'utf-8' )
+	xmlfile = codecs.open( 'sets/%s.xml' % '_'.join( setName.split() ), 'w', 'utf-8' )
 	cardLinks = soup.find_all( 'a', { 'class' : 'nameLink' } )
 
 	i = 1
@@ -377,22 +384,19 @@ def saveSet( setName ):
 		if m:
 			mid = m.group( 0 )
 			c = scrapePage( mid )
-			print i, '/', len( cardLinks )
+			print setName, i, '/', len( cardLinks )
 			printCard( c, xmlfile )
 			i += 1
 
 	xmlfile.close()
 
 
-#ids = [ '218043', '159408', '153471', '73935', '201563', '366303', '121268', '266299', '262675', '262698', '292753', '2014' ]
-#for i in ids:
-	#print '=' * 80
-	#c = scrapePage( i )
-	#printCard( c )
+if not os.path.exists( 'sets' ):
+	os.makedirs( 'sets' )
 
-sets = open( 'setnames' )
+sets = open( 'allsets' )
 for s in sets:
 	s = s.strip()
 	if s and s[0] != '#':
-		print s
 		saveSet( s )
+

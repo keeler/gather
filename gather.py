@@ -151,8 +151,9 @@ def getPowerToughness( soup , doubleSided = False, desiredSide = 'a' ):
 	if pttag:
 		label = pttag.findChildren( 'div', { 'class' : 'label' } )[0].text.strip()
 		if label == 'P/T:':
-			pt = pttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip().split( '/' )
-			return ( pt[0].strip(), pt[1].strip() )
+			m = re.search( '^(.*) \/ (.*)$', pttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip() )
+			if m:
+				return ( m.groups()[0], m.groups()[1] )
 
 	return ( '', '' )
 

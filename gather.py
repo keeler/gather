@@ -381,7 +381,7 @@ def producer( idNum ):
 		soupQueue.put( soup )
 
 def consumer( idNum, totalCards ):
-	while True:
+	while len( cards ) < int( totalCards ):
 		try:
 			soup = soupQueue.get( block = False )
 		except Queue.Empty:
@@ -391,6 +391,7 @@ def consumer( idNum, totalCards ):
 			with cardsMutex:
 				cards.append( c )
 				print 'Cards processed:', len( cards ), '/', totalCards
+			soupQueue.task_done()
 
 
 def saveSet( setName ):
@@ -414,15 +415,12 @@ def saveSet( setName ):
 
 	for i in range( numConsumers ):
 		t = threading.Thread( target = consumer, args = ( i, len( cardLinks ) ) )
-		t.daemon = True
+		joinable.append( t )
 		t.start()
 
 	# Wait for all threads to finish.
 	for t in joinable: t.join()
-	while True:
-		with cardsMutex:
-			if len( cards ) == len( cardLinks ):
-				break
+	soupQueue.join()
 
 	print 'Writing results to file:', len( cards ), 'cards'
 	xmlfile = codecs.open( 'sets/%s.xml' % '_'.join( setName.split() ), 'w', 'utf-8' )
@@ -460,5 +458,9 @@ if __name__ == '__main__':
 			parser.print_help()
 	else:
 		for s in setNames:
+			print '=' * 80
+			print s
+			print '=' * 80
+			cards = []
 			saveSet( s )
 

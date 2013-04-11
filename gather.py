@@ -92,7 +92,13 @@ def getTypes( soup , doubleSided = False, desiredSide = 'a' ):
 				supertypes.append( t )
 			elif t in ['Artifact', 'Creature', 'Enchantment', 'Land', 'Planeswalker', 'Tribal', 'Instant', 'Sorcery']:
 				types.append( t )
-			elif t:
+			elif t == 'Summon':
+				types.append( 'Creature' )
+			elif t == 'Interrupt':
+				types.append( 'Instant' )
+			elif t == 'Enchant':
+				types.append( 'Enchantment' )
+			elif t and t != '(none)': # Tokens are listed with (none) type
 				sys.stderr.write( 'Weird type:' + t + '\n' )
 				types.append( t )
 		if len( typelist ) > 1:

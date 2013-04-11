@@ -93,7 +93,7 @@ def getTypes( soup , doubleSided = False, desiredSide = 'a' ):
 			elif t in ['Artifact', 'Creature', 'Enchantment', 'Land', 'Planeswalker', 'Tribal', 'Instant', 'Sorcery']:
 				types.append( t )
 			elif t:
-				print 'Weird type:', t
+				sys.stderr.write( 'Weird type:' + t + '\n' )
 				types.append( t )
 		if len( typelist ) > 1:
 			subtypes = typelist[1].strip()
@@ -377,10 +377,12 @@ def producer( idNum ):
 				soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + mid ) )
 				break
 			except IOError:
+				print 'Error getting card.'
+				time.sleep( 1 )
 				pass
 		soupQueue.put( soup )
 
-def consumer( idNum, totalCards ):
+def consumer( idNum, totalCards, setName ):
 	while len( cards ) < int( totalCards ):
 		try:
 			soup = soupQueue.get( block = False )
@@ -390,7 +392,9 @@ def consumer( idNum, totalCards ):
 			c = scrapePage( soup )
 			with cardsMutex:
 				cards.append( c )
-				print 'Cards processed:', len( cards ), '/', totalCards
+				percent = str( round( len( cards ) * 1.0 / totalCards * 100, 0 ) )
+				sys.stdout.write( '\r' + setName + ' :: ' + percent + '%' )
+				sys.stdout.flush()
 			soupQueue.task_done()
 
 
@@ -414,7 +418,7 @@ def saveSet( setName ):
 		t.start()
 
 	for i in range( numConsumers ):
-		t = threading.Thread( target = consumer, args = ( i, len( cardLinks ) ) )
+		t = threading.Thread( target = consumer, args = ( i, len( cardLinks ), setName ) )
 		joinable.append( t )
 		t.start()
 
@@ -422,7 +426,7 @@ def saveSet( setName ):
 	for t in joinable: t.join()
 	soupQueue.join()
 
-	print 'Writing results to file:', len( cards ), 'cards'
+	print ' :: (wrote', len( cards ), 'cards)'
 	xmlfile = codecs.open( 'sets/%s.xml' % '_'.join( setName.split() ), 'w', 'utf-8' )
 	cards.sort( key = lambda x: x['name'] )
 	for c in cards:
@@ -433,7 +437,7 @@ if __name__ == '__main__':
 	usage = 'usage: %prog [-a|-s <set name>]\nScrape card information from gatherer.wizards.com into XML files.'
 	parser = OptionParser( usage = usage )
 	parser.add_option( '-a', '--all',
-						action = 'store_true', dest = 'downloadAll', default = 'True',
+						action = 'store_true', dest = 'downloadAll',
 						help = 'Scrape information for all Magic: The Gathering sets.' )
 	parser.add_option( '-s', '--set',
 						metavar = 'SETNAME', help = 'Download a specific set. See allsets file for recognized sets.' )
@@ -458,9 +462,6 @@ if __name__ == '__main__':
 			parser.print_help()
 	else:
 		for s in setNames:
-			print '=' * 80
-			print s
-			print '=' * 80
 			cards = []
 			saveSet( s )
 

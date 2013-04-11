@@ -5,15 +5,17 @@ import os
 from collections import defaultdict
 import codecs
 
+Basis = 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent'
+
 def getName( soup, doubleSided = False, desiredSide = 'a' ):
 	nametag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			nametag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_nameRow', 'class' : 'row' } )
+			nametag = soup.find( 'div', { 'id' : Basis + '_ctl07_nameRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			nametag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_nameRow', 'class' : 'row' } )
+			nametag = soup.find( 'div', { 'id' : Basis + '_ctl08_nameRow', 'class' : 'row' } )
 	else:
-		nametag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_nameRow', 'class' : 'row' } )
+		nametag = soup.find( 'div', { 'id' : Basis + '_nameRow', 'class' : 'row' } )
 
 	if nametag:
 		return nametag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
@@ -25,11 +27,11 @@ def getManaCost( soup, doubleSided = False, desiredSide = 'a' ):
 	manatag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			manatag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_manaRow', 'class' : 'row' } )
+			manatag = soup.find( 'div', { 'id' : Basis + '_ctl07_manaRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			manatag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_manaRow', 'class' : 'row' } )
+			manatag = soup.find( 'div', { 'id' : Basis + '_ctl08_manaRow', 'class' : 'row' } )
 	else:
-		manatag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_manaRow', 'class' : 'row' } )
+		manatag = soup.find( 'div', { 'id' : Basis + '_manaRow', 'class' : 'row' } )
 
 	manastring = ''
 	if manatag:
@@ -50,11 +52,11 @@ def getConvertedManaCost( soup, doubleSided = False, desiredSide = 'a' ):
 	cmctag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			cmctag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_cmcRow', 'class' : 'row' } )
+			cmctag = soup.find( 'div', { 'id' : Basis + '_ctl07_cmcRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			cmctag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_cmcRow', 'class' : 'row' } )
+			cmctag = soup.find( 'div', { 'id' : Basis + '_ctl08_cmcRow', 'class' : 'row' } )
 	else:
-		cmctag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_cmcRow', 'class' : 'row' } )
+		cmctag = soup.find( 'div', { 'id' : Basis + '_cmcRow', 'class' : 'row' } )
 
 	if cmctag:
 		return cmctag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
@@ -67,11 +69,11 @@ def getTypes( soup , doubleSided = False, desiredSide = 'a' ):
 	typetag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			typetag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_typeRow', 'class' : 'row' } )
+			typetag = soup.find( 'div', { 'id' : Basis + '_ctl07_typeRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			typetag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_typeRow', 'class' : 'row' } )
+			typetag = soup.find( 'div', { 'id' : Basis + '_ctl08_typeRow', 'class' : 'row' } )
 	else:
-		typetag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_typeRow', 'class' : 'row' } )
+		typetag = soup.find( 'div', { 'id' : Basis + '_typeRow', 'class' : 'row' } )
 
 	supertypes = []
 	types = []
@@ -97,11 +99,11 @@ def getRuleText( soup , doubleSided = False, desiredSide = 'a' ):
 	texttag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			texttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_textRow', 'class' : 'row' } )
+			texttag = soup.find( 'div', { 'id' : Basis + '_ctl07_textRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			texttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_textRow', 'class' : 'row' } )
+			texttag = soup.find( 'div', { 'id' : Basis + '_ctl08_textRow', 'class' : 'row' } )
 	else:
-		texttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_textRow', 'class' : 'row' } )
+		texttag = soup.find( 'div', { 'id' : Basis + '_textRow', 'class' : 'row' } )
 
 	cardlines = []
 	if texttag:
@@ -139,11 +141,11 @@ def getPowerToughness( soup , doubleSided = False, desiredSide = 'a' ):
 	pttag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_ptRow', 'class' : 'row' } )
+			pttag = soup.find( 'div', { 'id' : Basis + '_ctl07_ptRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_ptRow', 'class' : 'row' } )
+			pttag = soup.find( 'div', { 'id' : Basis + '_ctl08_ptRow', 'class' : 'row' } )
 	else:
-		pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow', 'class' : 'row' } )
+		pttag = soup.find( 'div', { 'id' : Basis + '_ptRow', 'class' : 'row' } )
 
 	if pttag:
 		label = pttag.findChildren( 'div', { 'class' : 'label' } )[0].text.strip()
@@ -158,11 +160,11 @@ def getLoyalty( soup , doubleSided = False, desiredSide = 'a' ):
 	pttag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_ptRow', 'class' : 'row' } )
+			pttag = soup.find( 'div', { 'id' : Basis + '_ctl07_ptRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_ptRow', 'class' : 'row' } )
+			pttag = soup.find( 'div', { 'id' : Basis + '_ctl08_ptRow', 'class' : 'row' } )
 	else:
-		pttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ptRow', 'class' : 'row' } )
+		pttag = soup.find( 'div', { 'id' : Basis + '_ptRow', 'class' : 'row' } )
 
 	if pttag:
 		label = pttag.findChildren( 'div', { 'class' : 'label' } )[0].text.strip()
@@ -174,11 +176,11 @@ def getRarity( soup, doubleSided = False, desiredSide = 'a' ):
 	raritytag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			raritytag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_rarityRow', 'class' : 'row' } )
+			raritytag = soup.find( 'div', { 'id' : Basis + '_ctl07_rarityRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			raritytag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_rarityRow', 'class' : 'row' } )
+			raritytag = soup.find( 'div', { 'id' : Basis + '_ctl08_rarityRow', 'class' : 'row' } )
 	else:
-		raritytag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_rarityRow', 'class' : 'row' } )
+		raritytag = soup.find( 'div', { 'id' : Basis + '_rarityRow', 'class' : 'row' } )
 	
 	if raritytag:
 		return raritytag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
@@ -190,11 +192,11 @@ def getArtist( soup, doubleSided = False, desiredSide = 'a' ):
 	artisttag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			artisttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_artistRow', 'class' : 'row' } )
+			artisttag = soup.find( 'div', { 'id' : Basis + '_ctl07_artistRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			artisttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_artistRow', 'class' : 'row' } )
+			artisttag = soup.find( 'div', { 'id' : Basis + '_ctl08_artistRow', 'class' : 'row' } )
 	else:
-		artisttag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_artistRow', 'class' : 'row' } )
+		artisttag = soup.find( 'div', { 'id' : Basis + '_artistRow', 'class' : 'row' } )
 	
 	if artisttag:
 		return artisttag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
@@ -206,11 +208,11 @@ def getSetName( soup, doubleSided = False, desiredSide = 'a' ):
 	settag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			settag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_setRow', 'class' : 'row' } )
+			settag = soup.find( 'div', { 'id' : Basis + '_ctl07_setRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			settag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_setRow', 'class' : 'row' } )
+			settag = soup.find( 'div', { 'id' : Basis + '_ctl08_setRow', 'class' : 'row' } )
 	else:
-		settag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_setRow', 'class' : 'row' } )
+		settag = soup.find( 'div', { 'id' : Basis + '_setRow', 'class' : 'row' } )
 	
 	if settag:
 		return settag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
@@ -223,11 +225,11 @@ def getCollectorNumber( soup, doubleSided = False, desiredSide = 'a' ):
 	cntag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			cntag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_numberRow', 'class' : 'row' } )
+			cntag = soup.find( 'div', { 'id' : Basis + '_ctl07_numberRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			cntag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_numberRow', 'class' : 'row' } )
+			cntag = soup.find( 'div', { 'id' : Basis + '_ctl08_numberRow', 'class' : 'row' } )
 	else:
-		cntag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_numberRow', 'class' : 'row' } )
+		cntag = soup.find( 'div', { 'id' : Basis + '_numberRow', 'class' : 'row' } )
 	
 	if cntag:
 		return cntag.findChildren( 'div', { 'class' : 'value' } )[0].text.strip()
@@ -239,11 +241,11 @@ def getFlavorText( soup, doubleSided = False, desiredSide = 'a' ):
 	flavortag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			flavortag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_flavorRow', 'class' : 'row' } )
+			flavortag = soup.find( 'div', { 'id' : Basis + '_ctl07_flavorRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			flavortag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_flavorRow', 'class' : 'row' } )
+			flavortag = soup.find( 'div', { 'id' : Basis + '_ctl08_flavorRow', 'class' : 'row' } )
 	else:
-		flavortag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_flavorRow', 'class' : 'row' } )
+		flavortag = soup.find( 'div', { 'id' : Basis + '_flavorRow', 'class' : 'row' } )
 	
 	if flavortag:
 		flavorlines = flavortag.findChildren( 'div', { 'class' : 'value' } )[0].findChildren( 'div', { 'class' : 'cardtextbox' } )
@@ -263,11 +265,11 @@ def getEditionsList( soup, doubleSided = False, desiredSide = 'a' ):
 	alltag = ''
 	if doubleSided:
 		if desiredSide == 'a':
-			alltag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_otherSetsRow', 'class' : 'row' } )
+			alltag = soup.find( 'div', { 'id' : Basis + '_ctl07_otherSetsRow', 'class' : 'row' } )
 		elif desiredSide == 'b':
-			alltag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl08_otherSetsRow', 'class' : 'row' } )
+			alltag = soup.find( 'div', { 'id' : Basis + '_ctl08_otherSetsRow', 'class' : 'row' } )
 	else:
-		alltag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_otherSetsRow', 'class' : 'row' } )
+		alltag = soup.find( 'div', { 'id' : Basis + '_otherSetsRow', 'class' : 'row' } )
 	
 	editions = []
 	if alltag:
@@ -296,7 +298,7 @@ def getEditionsList( soup, doubleSided = False, desiredSide = 'a' ):
 
 
 def isDoubleSided( soup ):
-	nametag = soup.find( 'div', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent_ctl07_nameRow', 'class' : 'row' } )
+	nametag = soup.find( 'div', { 'id' : Basis + '_ctl07_nameRow', 'class' : 'row' } )
 	if nametag:
 		return True
 	else:
@@ -330,7 +332,7 @@ def scrapePage( multiverseId ):
 		card['artist'] = getArtist( soup )
 	else:
 		# Figure out which side corresponds to this multiverseId
-		subtitle = soup.find( 'span', { 'id' : 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContentHeader_subtitleDisplay' } )
+		subtitle = soup.find( 'span', { 'id' : Basis + 'Header_subtitleDisplay' } )
 		desiredSide = 'a'
 		if getName( soup, True, 'b' ) == subtitle.text.strip():
 			desiredSide = 'b'
@@ -384,7 +386,7 @@ def saveSet( setName ):
 		if m:
 			mid = m.group( 0 )
 			c = scrapePage( mid )
-			print setName, i, '/', len( cardLinks )
+			print setName, i, '/', len( cardLinks ), '::', c['name']
 			printCard( c, xmlfile )
 			i += 1
 

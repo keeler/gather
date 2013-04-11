@@ -5,7 +5,12 @@ import os
 from collections import defaultdict
 import codecs
 from optparse import OptionParser
-
+import Queue
+import random
+import sys
+import threading
+import time
+ 
 Basis = 'ctl00_ctl00_ctl00_MainContent_SubContent_SubContent'
 
 def getName( soup, doubleSided = False, desiredSide = 'a' ):
@@ -130,12 +135,7 @@ def getRuleText( soup , doubleSided = False, desiredSide = 'a' ):
 			rulestring = re.sub( '<.?i>', '', rulestring )
 			cardlines.append( rulestring )
 
-	p = re.compile( ur'\u2014', re.UNICODE )
-	cardtext = []
-	for rule in cardlines:
-		cardtext.append( p.sub( '--', rule ).strip() )
-	
-	return '<br>'.join( filter( None, cardtext ) )
+	return '<br>'.join( filter( None, cardlines ) )
 
 # Returns power, toughness as tuple.
 def getPowerToughness( soup , doubleSided = False, desiredSide = 'a' ):
@@ -250,10 +250,9 @@ def getFlavorText( soup, doubleSided = False, desiredSide = 'a' ):
 	
 	if flavortag:
 		flavorlines = flavortag.findChildren( 'div', { 'class' : 'value' } )[0].findChildren( 'div', { 'class' : 'cardtextbox' } )
-		p = re.compile( ur'\u2014', re.UNICODE )
 		flavortext = [] 
 		for flavor in flavorlines:
-			flavortext.append( p.sub( '--', flavor.text ).strip() )
+			flavortext.append( flavor.text.strip() ) 
 		return '<br>'.join( filter( None, flavortext ) )
 	else:
 		return ''
@@ -306,17 +305,10 @@ def isDoubleSided( soup ):
 		return False
 
 
-def scrapePage( multiverseId ):
-	havePage = False
-	while not havePage:
-		try:
-			soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + multiverseId ) )
-			havePage = True
-		except IOError:
-			pass
-
+def scrapePage( soup ):
 	card = defaultdict( str )
-	card['mid'] = multiverseId
+
+	card['mid'] = re.search( '(\d+)$', soup.find( 'form', { 'method' : 'post', 'id' : 'aspnetForm' } )['action'] ).groups()[0]
 
 	if not isDoubleSided( soup ):
 		card['name'] = getName( soup )
@@ -351,10 +343,6 @@ def scrapePage( multiverseId ):
 		card['flavor'] = getFlavorText( soup, True, desiredSide )
 		card['artist'] = getArtist( soup, True, desiredSide )
 
-	p = re.compile( ur'\xc6', re.UNICODE )
-	#card['name'] = p.sub( 'Ae', card['name'] ).strip()
-	#card['rules'] = p.sub( 'Ae', card['rules'] ).strip()
-
 	return card
 
 
@@ -375,25 +363,74 @@ def printCard( card, filehandle = None ):
 				print '\t<' + attr + '>' + card[attr] + '</' + attr + '>'
 		print '</card>'
 
+
+midQueue = Queue.Queue()
+soupQueue = Queue.Queue()
+cards = []
+cardsMutex = threading.Lock()
+ 
+def producer( idNum ):
+	while not midQueue.empty():
+		mid = midQueue.get( block = False )
+		while True:
+			try:
+				soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Card/Details.aspx?multiverseid=' + mid ) )
+				break
+			except IOError:
+				pass
+		soupQueue.put( soup )
+
+def consumer( idNum, totalCards ):
+	while True:
+		try:
+			soup = soupQueue.get( block = False )
+		except Queue.Empty:
+			pass
+		else:
+			c = scrapePage( soup )
+			with cardsMutex:
+				cards.append( c )
+				print 'Cards processed:', len( cards ), '/', totalCards
+
+
 def saveSet( setName ):
 	soup = BeautifulSoup( urllib.urlopen( 'http://gatherer.wizards.com/Pages/Search/Default.aspx?output=checklist&action=advanced&set=|[%22' + '+'.join( setName.split() ) + '%22]' ) )
-
-	xmlfile = codecs.open( 'sets/%s.xml' % '_'.join( setName.split() ), 'w', 'utf-8' )
 	cardLinks = soup.find_all( 'a', { 'class' : 'nameLink' } )
 
-	i = 1
 	for link in cardLinks:
 		m = re.search( '(\d+)$', link['href'] )
 		if m:
 			mid = m.group( 0 )
-			c = scrapePage( mid )
-			print setName, i, '/', len( cardLinks ), '::', c['name']
-			printCard( c, xmlfile )
-			i += 1
+			midQueue.put( mid )
 
+	numProducers = 10
+	numConsumers = 5
+
+	joinable = []
+	for i in range( numProducers ):
+		t = threading.Thread( target = producer, args = ( i, ) )
+		joinable.append( t )
+		t.start()
+
+	for i in range( numConsumers ):
+		t = threading.Thread( target = consumer, args = ( i, len( cardLinks ) ) )
+		t.daemon = True
+		t.start()
+
+	# Wait for all threads to finish.
+	for t in joinable: t.join()
+	while True:
+		with cardsMutex:
+			if len( cards ) == len( cardLinks ):
+				break
+
+	print 'Writing results to file:', len( cards ), 'cards'
+	xmlfile = codecs.open( 'sets/%s.xml' % '_'.join( setName.split() ), 'w', 'utf-8' )
+	cards.sort( key = lambda x: x['name'] )
+	for c in cards:
+		printCard( c, xmlfile )
 	xmlfile.close()
-
-
+ 
 if __name__ == '__main__':
 	usage = 'usage: %prog [-a|-s <set name>]\nScrape card information from gatherer.wizards.com into XML files.'
 	parser = OptionParser( usage = usage )

@@ -435,7 +435,18 @@ def saveSet( setName ):
 
 	print ' :: (wrote', len( cards ), 'cards)'
 	xmlfile = codecs.open( 'sets/%s.xml' % '_'.join( setName.split() ), 'w', 'utf-8' )
-	cards.sort( key = lambda x: x['name'] )
+
+	# Sort cards using collector numbers as keys; use the name if there is no number.
+	def gimmekey( x ):
+		if 'number' in x:
+			if 'a' in x['number'] or 'b' in x['number']:
+				return int( x['number'][:-1] )
+			else:
+				return int( x['number'] )
+		else:
+			return x['name']
+
+	cards.sort( key = lambda x: gimmekey( x ) )
 	for c in cards:
 		printCard( c, xmlfile )
 	xmlfile.close()
